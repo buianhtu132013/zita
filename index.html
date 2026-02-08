@@ -10,30 +10,92 @@
       font-family: Arial, sans-serif;
       background: #f0f2f5;
     }
+
     header {
       background: #1877f2;
       color: white;
       padding: 12px;
       text-align: center;
+      font-size: 20px;
       font-weight: bold;
     }
-    main {
-      padding: 16px;
-    }
-    .box {
-      background: white;
+
+    .container {
       padding: 12px;
+    }
+
+    .post-box, .post {
+      background: white;
       border-radius: 8px;
+      padding: 10px;
+      margin-bottom: 12px;
+    }
+
+    textarea {
+      width: 100%;
+      border: none;
+      resize: none;
+      outline: none;
+      font-size: 14px;
+    }
+
+    button {
+      width: 100%;
+      padding: 8px;
+      background: #1877f2;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-size: 14px;
+    }
+
+    .name {
+      font-weight: bold;
+      margin-bottom: 4px;
+    }
+
+    .time {
+      font-size: 12px;
+      color: gray;
+      margin-top: 6px;
     }
   </style>
 </head>
 <body>
+
   <header>Zita</header>
-  <main>
-    <div class="box">
-      🎉 Web đã chạy online!<br>
-      Bước 1 hoàn thành.
+
+  <div class="container">
+    <!-- Ô đăng bài -->
+    <div class="post-box">
+      <textarea id="content" rows="3" placeholder="Bạn đang nghĩ gì?"></textarea>
+      <button onclick="post()">Đăng</button>
     </div>
-  </main>
+
+    <!-- Feed -->
+    <div id="feed"></div>
+  </div>
+
+  <script>
+    function post() {
+      const text = document.getElementById("content").value.trim();
+      if (!text) return;
+
+      const post = document.createElement("div");
+      post.className = "post";
+
+      post.innerHTML = `
+        <div class="name">Người dùng</div>
+        <div>${text}</div>
+        <div class="time">Vừa xong</div>
+      `;
+
+      const feed = document.getElementById("feed");
+      feed.prepend(post);
+
+      document.getElementById("content").value = "";
+    }
+  </script>
+
 </body>
 </html>
