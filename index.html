@@ -2,180 +2,108 @@
 <html lang="vi">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Zita</title>
-
+<title>Z-ita</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
-body {
-  margin: 0;
-  font-family: Arial, sans-serif;
-  background: #e4e6eb;
-  font-size: 14px;
-}
-
-/* TOP BAR */
-header {
-  background: #fff;
-  padding: 10px;
-  font-weight: bold;
-  color: #1877f2;
-  font-size: 20px;
-  border-bottom: 1px solid #ddd;
-}
-
-/* CONTAINER */
-.container {
-  max-width: 600px;
-  margin: auto;
-}
-
-/* COMMON */
-.box {
-  background: #fff;
-  margin: 8px;
-  padding: 8px;
-}
-
-/* AVATAR */
-.avatar {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  background: #1877f2;
-  color: #fff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: bold;
-  margin-right: 8px;
-  flex-shrink: 0;
-}
-
-/* POST INPUT */
-.post-input {
-  display: flex;
-  align-items: center;
-}
-
-.post-input input {
-  flex: 1;
-  padding: 10px;
-  border-radius: 20px;
-  border: none;
-  background: #f0f2f5;
-  font-size: 14px;
-}
-
-/* BUTTON */
-button {
-  width: 100%;
-  margin-top: 8px;
-  padding: 8px;
-  border: none;
-  background: #1877f2;
-  color: white;
-  border-radius: 4px;
-  font-weight: bold;
-}
-
-/* POST */
-.post {
-  display: flex;
-  margin-bottom: 8px;
-}
-
-.post-content {
-  flex: 1;
-}
-
-.name {
-  font-weight: bold;
-}
-
-.time {
-  font-size: 12px;
-  color: gray;
-  margin-top: 4px;
-}
+body{font-family:sans-serif;margin:0;background:#f0f2f5}
+header{background:#1877f2;color:#fff;padding:10px;font-weight:bold}
+#login,#logout{margin:10px;padding:8px}
+#postBox{display:none;padding:10px}
+textarea{width:100%;height:60px}
+button{padding:8px;margin-top:5px}
+.post{background:#fff;margin:10px;padding:10px;border-radius:6px}
 </style>
 </head>
-
 <body>
 
-<header>Zita</header>
+<header>Z-ita</header>
 
-<div class="container">
+<button id="login">Đăng nhập Google</button>
+<button id="logout" style="display:none">Đăng xuất</button>
 
-  <!-- USERNAME -->
-  <div class="box">
-    <input id="username" placeholder="Tên người dùng"
-      style="width:100%;padding:8px;border:1px solid #ccc;border-radius:4px;">
-    <button onclick="saveName()">Lưu tên</button>
-  </div>
+<div id="user"></div>
 
-  <!-- CREATE POST -->
-  <div class="box post-input">
-    <div class="avatar" id="meAvatar">U</div>
-    <input id="content" placeholder="Bạn đang nghĩ gì?">
-  </div>
-  <div class="box">
-    <button onclick="addPost()">Đăng</button>
-  </div>
-
-  <!-- POSTS -->
-  <div id="posts"></div>
-
+<div id="postBox">
+  <textarea id="content" placeholder="Viết gì đó..."></textarea>
+  <button id="postBtn">Đăng bài</button>
 </div>
 
-<script>
-const usernameInput = document.getElementById("username");
+<div id="posts"></div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
+import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } 
+from "https://www.gstatic.com/firebasejs/12.9.0/firebase-auth.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyA11JBfnZ4ludqs0kdrmPHhmbFxuS2kcBc",
+  authDomain: "z-ita-c9424.firebaseapp.com",
+  projectId: "z-ita-c9424",
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const provider = new GoogleAuthProvider();
+
+const loginBtn = document.getElementById("login");
+const logoutBtn = document.getElementById("logout");
+const postBox = document.getElementById("postBox");
 const postsDiv = document.getElementById("posts");
-const meAvatar = document.getElementById("meAvatar");
 
-usernameInput.value = localStorage.getItem("zita_name") || "";
+let currentUser = null;
 
-function saveName() {
-  const name = usernameInput.value.trim();
-  if (!name) return alert("Nhập tên đi");
-  localStorage.setItem("zita_name", name);
-  meAvatar.innerText = name[0].toUpperCase();
-}
+// LOGIN
+loginBtn.onclick = () => {
+  signInWithPopup(auth, provider);
+};
 
-let posts = JSON.parse(localStorage.getItem("zita_posts")) || [];
+// LOGOUT
+logoutBtn.onclick = () => signOut(auth);
 
-function renderPosts() {
-  postsDiv.innerHTML = "";
-  posts.slice().reverse().forEach(p => {
-    const div = document.createElement("div");
-    div.className = "box post";
-    div.innerHTML = `
-      <div class="avatar">${p.name[0].toUpperCase()}</div>
-      <div class="post-content">
-        <div class="name">${p.name}</div>
-        <div>${p.text}</div>
-        <div class="time">Vừa xong</div>
-      </div>
-    `;
+// AUTH STATE
+onAuthStateChanged(auth, user => {
+  if(user){
+    currentUser = user;
+    loginBtn.style.display="none";
+    logoutBtn.style.display="block";
+    postBox.style.display="block";
+    document.getElementById("user").innerText = "👤 " + user.displayName;
+    loadPosts();
+  }else{
+    currentUser = null;
+    loginBtn.style.display="block";
+    logoutBtn.style.display="none";
+    postBox.style.display="none";
+    postsDiv.innerHTML="";
+  }
+});
+
+// POST
+document.getElementById("postBtn").onclick = () => {
+  const text = document.getElementById("content").value.trim();
+  if(!text) return;
+
+  const data = JSON.parse(localStorage.getItem("posts")||"[]");
+  data.unshift({
+    name: currentUser.displayName,
+    text: text,
+    uid: currentUser.uid
+  });
+  localStorage.setItem("posts", JSON.stringify(data));
+  document.getElementById("content").value="";
+  loadPosts();
+};
+
+function loadPosts(){
+  const data = JSON.parse(localStorage.getItem("posts")||"[]");
+  postsDiv.innerHTML="";
+  data.forEach(p=>{
+    const div=document.createElement("div");
+    div.className="post";
+    div.innerHTML=`<b>${p.name}</b><br>${p.text}`;
     postsDiv.appendChild(div);
   });
 }
-
-function addPost() {
-  const text = content.value.trim();
-  if (!text) return;
-
-  const name = localStorage.getItem("zita_name") || "Người dùng";
-  posts.push({ name, text });
-  localStorage.setItem("zita_posts", JSON.stringify(posts));
-  content.value = "";
-  renderPosts();
-}
-
-if (usernameInput.value) {
-  meAvatar.innerText = usernameInput.value[0].toUpperCase();
-}
-
-renderPosts();
 </script>
 
 </body>
